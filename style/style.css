@@ -1,0 +1,51 @@
+.container-header{
+    margin-top: 30px;
+}
+
+.container {
+    margin-top: 30px;
+}
+
+.container-title {
+    height: 100px;
+}
+
+.text-center {
+    text-align: center!important;
+}
+
+.text-width{
+    width: 100px;
+    border-radius: 20px;
+    margin-left: 10px;
+    margin-right: 10px;
+    padding-left: 5px;
+}
+
+.text-input-item{
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.text-input-number {
+    width: 20px;
+    margin-right: 30px;
+    font-weight: bold;
+}
+
+.stage-border{
+    border: green solid 2px;
+}
+
+/*Common CSS*/
+.no-padding{
+    padding: 0!important;
+}
+
+.no-mlr {
+    margin-right: 0!important;
+    margin-left: 0!important;
+}
+.mt-30 {
+    margin-top: 30px!important;
+}
