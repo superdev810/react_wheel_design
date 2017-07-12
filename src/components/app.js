@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import {Button, FormGroup, ControlLabel, FormControl} from 'react-bootstrap';
-import {Layer, Stage, Group, Image, Line} from 'react-konva';
+import {Layer, Stage, Group, Image, Line, Label, Tag, Text} from 'react-konva';
 let wheel = {
     width: 30,
     height: 100
@@ -136,12 +136,12 @@ export default class App extends Component {
         this.drawAxle();
     }
 
-    handleMouseUp(event){
+    handleMouseUp(event, index){
         console.log('Parent Callback Mouse Up');
         console.log(event.target);
         let x = event.target.attrs.x;
         let y = event.target.attrs.y;
-        let index = event.target.index;
+        // let index = event.target.index;
 
         let tempPos = this.fitWheelGrid(x, y, index);
         let wheelPos = this.state.wheelPos;
@@ -178,12 +178,13 @@ export default class App extends Component {
         }
         return(grid_lines);
     }
+
     drawAxle(){
         let axles = [];
         for(let i=0; i<this.state.wheelPos.length-1; i++){
             for(let j=i+1; j<this.state.wheelPos.length; j++){
                 if(this.state.wheelPos[i].y == this.state.wheelPos[j].y){
-                    axles.push(<GridLine key={300+i+j} points={[this.state.wheelPos[i].x+wheel.width/2, this.state.wheelPos[i].y+wheel.height/2, this.state.wheelPos[j].x+wheel.width/2, this.state.wheelPos[j].y+wheel.height/2]} x={0} y={0} stroke="#4d4d4d" strokeWidth={10}/>);
+                    axles.push(<GridLine key={300+i*16+j} points={[this.state.wheelPos[i].x+wheel.width/2, this.state.wheelPos[i].y+wheel.height/2, this.state.wheelPos[j].x+wheel.width/2, this.state.wheelPos[j].y+wheel.height/2]} x={0} y={0} stroke="#4d4d4d" strokeWidth={10}/>);
                 }
             }
         }
@@ -242,16 +243,29 @@ export default class App extends Component {
                                 }
                             </Layer>
                             <Layer ref="axle">
+
                                 {
                                     this.drawAxle()
                                 }
                             </Layer>
                             <Layer ref="layer">
-
                                 {
                                     this.state.wheelPos.map((wheelPos, i) => {
                                         return(
-                                            <MyImage key={i} x={this.state.wheelPos[i].x} y={this.state.wheelPos[i].y} mouseUp={this.handleMouseUp}/>
+                                            <MyImage key={i} x={this.state.wheelPos[i].x} y={this.state.wheelPos[i].y} mouseUp={(event) => this.handleMouseUp(event, i)}>
+                                            </MyImage>
+                                        );
+                                    })
+                                }
+                                {
+                                    this.state.wheelPos.map((wheelPos, i) => {
+                                        return(
+                                            <Label key={(i+1) * 1000} x={wheelPos.x+wheel.width/2} y={wheelPos.y - 10} opacity="0.75">
+                                                <Tag key={(i+1) * 2000} fill="green" pointerDirection="down" pointerWidth={10} pointerHeight={10} lineJoin="round" shadowColor="black" shadowBlur={10} shadowOffset={10} shadowOpacity={0.5}>
+
+                                                </Tag>
+                                                <Text key={(i+1) * 3000} text={i+1} fontSize={15} padding={5} fill="white" />
+                                            </Label>
                                         );
                                     })
                                 }
