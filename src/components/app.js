@@ -1,6 +1,15 @@
 import React, { Component } from 'react';
 import {Button, FormGroup, ControlLabel, FormControl} from 'react-bootstrap';
 import {Layer, Stage, Group, Image, Line} from 'react-konva';
+let wheel = {
+    width: 30,
+    height: 100
+}
+
+let board = {
+    width: 510,
+    height: 800
+}
 
 class MyImage extends Component {
     constructor(props){
@@ -27,8 +36,8 @@ class MyImage extends Component {
             <Image
                 image={this.state.image}
                 draggable="true"
-                width="30"
-                height="100"
+                width={wheel.width}
+                height={wheel.height}
                 x={this.props.x}
                 y={this.props.y}
                 onMouseUp={this.props.mouseUp}
@@ -50,7 +59,7 @@ export default class App extends Component {
 
     componentWillMount(){
         this.state = {
-            wheelCount: 3,
+            wheelCount: 2,
             vehicleName: '',
             contractArea: '',
             contractPressure: '',
@@ -62,20 +71,22 @@ export default class App extends Component {
 
         for (let i=0; i<this.state.wheelCount; i++) {
             this.state.wheelPos.push({
-                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : 0,
-                y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : 0
+                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*wheel.width + 0,
+                y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : -wheel.height
             })
         }
     }
     handleChange(event){
         console.log(event.target.value);
-        for (let i=0; i<this.state.wheelCount; i++) {
-            this.state.wheelPos.push({
-                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : 0,
-                y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : 0
+        let wheelPosTemp = [];
+        this.setState({wheelCount: event.target.value});
+        for (let i=0; i<event.target.value; i++) {
+            wheelPosTemp.push({
+                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*wheel.width + 0,
+                y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : -wheel.height
             })
         }
-        this.setState({wheelCount: event.target.value});
+        this.setState({wheelPos: wheelPosTemp});
     }
 
     xPosChange(event, index){
@@ -91,7 +102,7 @@ export default class App extends Component {
     yPosChange(event, index){
         console.log(this.state.wheelPos);
         let wheelPos = this.state.wheelPos;
-        wheelPos[index].y = event.target.value;
+        wheelPos[index].y = -event.target.value - wheel.height;
         this.setState({
             wheelPos: wheelPos
         });
@@ -119,22 +130,7 @@ export default class App extends Component {
     }
 
     render() {
-        let xyInputs = [];
-        let wheels = [];
-
-        for (let i=0; i<this.state.wheelCount; i++){
-            xyInputs.push(
-                <div key={i} className="text-input-item">
-                    <span className="text-input-number">{i+1}</span>
-                    <input type="text" placeholder="0.00" className="text-width" value={this.state.wheelPos[i]?this.state.wheelPos[i].x:"0.00"} onChange={(event) => this.xPosChange(event, i)}/>
-                    <input type="text" placeholder="0.00" className="text-width" value={this.state.wheelPos[i]?this.state.wheelPos[i].y:"0.00"} onChange={(event) => this.yPosChange(event, i)}/>
-                </div>
-            );
-
-            wheels.push(
-                <MyImage key={i} x={this.state.wheelPos[i].x} y={this.state.wheelPos[i].y} mouseUp={this.handleMouseUp}/>
-            );
-        }
+        const {wheelPos} = this.state;
 
         return (
             <div className="container-fluid">
@@ -147,20 +143,46 @@ export default class App extends Component {
                         <FormGroup controlId="formControlsSelect">
                             <ControlLabel>Select Wheels:</ControlLabel>
                             <FormControl componentClass="select" placeholder="Select Wheels" value={this.state.wheelCount} onChange={this.handleChange}>
+                                <option value="2">2 Wheels</option>
                                 <option value="3">3 Wheels</option>
                                 <option value="4">4 Wheels</option>
                                 <option value="5">5 Wheels</option>
                                 <option value="6">6 Wheels</option>
                                 <option value="7">7 Wheels</option>
+                                <option value="8">8 Wheels</option>
+                                <option value="9">9 Wheels</option>
+                                <option value="10">10 Wheels</option>
+                                <option value="11">11 Wheels</option>
+                                <option value="12">12 Wheels</option>
+                                <option value="13">13 Wheels</option>
+                                <option value="14">14 Wheels</option>
+                                <option value="15">15 Wheels</option>
+                                <option value="16">16 Wheels</option>
                             </FormControl>
                         </FormGroup>
-                        {xyInputs}
+                        {
+                            this.state.wheelPos.map((wheelPos, i) => {
+                                return(
+                                    <div key={i} className="text-input-item">
+                                        <span className="text-input-number">{i+1}</span>
+                                        <input type="text" placeholder="0.00" className="text-width" value={wheelPos?wheelPos.x:"0.00"} onChange={(event) => this.xPosChange(event, i)}/>
+                                        <input type="text" placeholder="0.00" className="text-width" value={wheelPos?-wheelPos.y-wheel.height:"0.00"} onChange={(event) => this.yPosChange(event, i)}/>
+                                    </div>
+                                );
+                            })
+                        }
                     </div>
                     <div className="col-md-6 text-center">
                         <h7 className="col-md-12 text-center container-title">CUSTOM VEHICLE DISPLAY</h7>
-                        <Stage ref="stage" width={500} height={700} className="mt-30 stage-border">
+                        <Stage ref="stage" width={board.width} height={board.height} y={board.height} className="mt-30 stage-border">
                             <Layer ref="layer">
-                                {wheels}
+                                {
+                                    this.state.wheelPos.map((wheelPos, i) => {
+                                        return(
+                                            <MyImage key={i} x={this.state.wheelPos[i].x} y={this.state.wheelPos[i].y} mouseUp={this.handleMouseUp}/>
+                                        );
+                                    })
+                                }
                                 {this.state.axles}
                             </Layer>
                         </Stage>
@@ -177,7 +199,7 @@ export default class App extends Component {
                             <ControlLabel bsClass="mt-30">GROSS WEIGHT</ControlLabel>
                             <FormControl type="text" value={this.state.vehicleName} placeholder="Gross Weight"/>
                             <ControlLabel bsClass="mt-30">GEAR CONFIGURATION</ControlLabel>
-                            <FormControl componentClass="select" placeholder="Select Wheels" value={this.state.wheelCount} onChange={this.handleChange}>
+                            <FormControl componentClass="select" placeholder="Select Wheels">
                                 <option value="3">Select Config</option>
                                 <option value="4">Select Config1</option>
                                 <option value="5">Select Config2</option>
