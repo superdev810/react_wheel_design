@@ -56,7 +56,7 @@ class GridLine extends Component {
     }
 
     render() {
-        console.log(this.props.points);
+        // console.log(this.props.points);
         return (
             <Line
                 draggable="false"
@@ -80,6 +80,7 @@ export default class App extends Component {
         this.yPosChange = this.yPosChange.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.drawAxle = this.drawAxle.bind(this);
+        this.fitWheelGrid = this.fitWheelGrid.bind(this);
     };
 
     componentWillMount(){
@@ -128,6 +129,7 @@ export default class App extends Component {
         console.log(this.state.wheelPos);
         let wheelPos = this.state.wheelPos;
         wheelPos[index].y = -event.target.value - wheel.height;
+
         this.setState({
             wheelPos: wheelPos
         });
@@ -141,13 +143,29 @@ export default class App extends Component {
         let y = event.target.attrs.y;
         let index = event.target.index;
 
+        let tempPos = this.fitWheelGrid(x, y, index);
         let wheelPos = this.state.wheelPos;
-        wheelPos[index].x = x;
-        wheelPos[index].y = y;
+        wheelPos[index].x = tempPos.x;
+        wheelPos[index].y = tempPos.y;
         this.setState({
             wheelPos: wheelPos
         });
         this.drawAxle();
+    }
+
+    fitWheelGrid(x, y, index){
+        if(x%wheel.width < (wheel.width/2)) {
+            x = Math.floor(x / wheel.width) * wheel.width;
+        }else{
+            x = Math.ceil(x / wheel.width) * wheel.width;
+        }
+        if(y%wheel.height < (wheel.height/2)) {
+            y = Math.floor(y / wheel.height) * wheel.height;
+        }else{
+            y = Math.ceil(y / wheel.height) * wheel.height;
+        }
+        console.log("(x, y) = (%s, %s)", x, y);
+        return {x: x, y:y};
     }
 
     drawGridLines(){
@@ -161,7 +179,15 @@ export default class App extends Component {
         return(grid_lines);
     }
     drawAxle(){
-        
+        let axles = [];
+        for(let i=0; i<this.state.wheelPos.length-1; i++){
+            for(let j=i+1; j<this.state.wheelPos.length; j++){
+                if(this.state.wheelPos[i].y == this.state.wheelPos[j].y){
+                    axles.push(<GridLine key={300+i+j} points={[this.state.wheelPos[i].x+wheel.width/2, this.state.wheelPos[i].y+wheel.height/2, this.state.wheelPos[j].x+wheel.width/2, this.state.wheelPos[j].y+wheel.height/2]} x={0} y={0} stroke="#4d4d4d" strokeWidth={10}/>);
+                }
+            }
+        }
+        return(axles);
     }
 
     render() {
