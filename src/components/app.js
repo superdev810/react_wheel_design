@@ -46,6 +46,31 @@ class MyImage extends Component {
     }
 }
 
+class GridLine extends Component {
+    constructor(props){
+        super(props);
+    }
+
+    state = {
+        line: null
+    }
+
+    render() {
+        console.log(this.props.points);
+        return (
+            <Line
+                draggable="false"
+                points={this.props.points}
+                x={this.props.x}
+                y={this.props.y}
+                stroke={this.props.stroke}
+                strokeWidth={this.props.strokeWidth}
+                tension={5}
+            />
+        );
+    }
+}
+
 export default class App extends Component {
     constructor(props){
         super(props);
@@ -125,6 +150,16 @@ export default class App extends Component {
         this.drawAxle();
     }
 
+    drawGridLines(){
+        let grid_lines = [];
+        for(let h=0; h<(board.height/wheel.height); h++){
+            grid_lines.push(<GridLine key={100+h} points={[0, -h*wheel.height, board.width, -h*wheel.height]} x={0} y={0} stroke="#c0c0c0" strokeWidth={1}/>)
+        }
+        for(let w=0; w<(board.width/wheel.width); w++){
+            grid_lines.push(<GridLine key={200+w} points={[w*wheel.width, 0, w*wheel.width, -board.height]} x={0} y={0} stroke="#c0c0c0" strokeWidth={1}/>)
+        }
+        return(grid_lines);
+    }
     drawAxle(){
         
     }
@@ -175,7 +210,18 @@ export default class App extends Component {
                     <div className="col-md-6 text-center">
                         <h7 className="col-md-12 text-center container-title">CUSTOM VEHICLE DISPLAY</h7>
                         <Stage ref="stage" width={board.width} height={board.height} y={board.height} className="mt-30 stage-border">
+                            <Layer ref="background">
+                                {
+                                    this.drawGridLines()
+                                }
+                            </Layer>
+                            <Layer ref="axle">
+                                {
+                                    this.drawAxle()
+                                }
+                            </Layer>
                             <Layer ref="layer">
+
                                 {
                                     this.state.wheelPos.map((wheelPos, i) => {
                                         return(
