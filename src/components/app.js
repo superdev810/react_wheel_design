@@ -41,6 +41,7 @@ class MyImage extends Component {
                 x={this.props.x}
                 y={this.props.y}
                 onMouseUp={this.props.mouseUp}
+                onDragMove={this.props.dragMove}
             />
         );
     }
@@ -106,16 +107,26 @@ export default class App extends Component {
         this.handleChange = this.handleChange.bind(this);
         this.xPosChange = this.xPosChange.bind(this);
         this.yPosChange = this.yPosChange.bind(this);
+
+        // image mouse event handles
         this.handleMouseUp = this.handleMouseUp.bind(this);
+        this.handleDragMove = this.handleDragMove.bind(this);
+
+        // draw axles handle
         this.drawAxle = this.drawAxle.bind(this);
-        this.fitWheelGrid = this.fitWheelGrid.bind(this);
-        this.changeBoardWidth = this.changeBoardWidth.bind(this);
-        this.changeBoardHeight = this.changeBoardHeight.bind(this);
-        this.boardChange = this.boardChange.bind(this);
-        // axles functions binding
         this.axleDownHandle = this.axleDownHandle.bind(this);
         this.axleMoveHandle = this.axleMoveHandle.bind(this);
         this.axleUpHandle = this.axleUpHandle.bind(this);
+
+        // wheel event handles
+        this.fitWheelGrid = this.fitWheelGrid.bind(this);
+        this.fitAllWheelsGrid = this.fitAllWheelsGrid.bind(this);
+        this.setWheelPos = this.setWheelPos.bind(this);
+
+        // board event handles
+        this.changeBoardWidth = this.changeBoardWidth.bind(this);
+        this.changeBoardHeight = this.changeBoardHeight.bind(this);
+        this.boardChange = this.boardChange.bind(this);
     };
 
     componentWillMount(){
@@ -135,12 +146,16 @@ export default class App extends Component {
             grossWeight: null,
             image: null,
             wheelPos: [],
+            axlesDown: {
+                x: null,
+                y: null
+            },
             axles: []
         };
 
         for (let i=0; i<this.state.wheelCount; i++) {
             this.state.wheelPos.push({
-                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*this.state.wheel.width + 0,
+                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*this.state.wheel.width - (this.state.wheel.width * 12),
                 y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : -this.state.wheel.height
             })
         }
@@ -162,8 +177,8 @@ export default class App extends Component {
         this.setState({wheelCount: event.target.value});
         for (let i=0; i<event.target.value; i++) {
             wheelPosTemp.push({
-                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*this.state.wheel.width + 0,
-                y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : -this.state.wheel.height
+                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*this.state.wheel.width - (this.state.wheel.width * 12),
+                y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : 11 * this.state.wheel.height
             })
         }
         this.setState({wheelPos: wheelPosTemp});
@@ -173,11 +188,17 @@ export default class App extends Component {
         console.log(this.refs.board.offsetWidth);
         console.log(this.refs.board.offsetHeight);
 
-
+        let tempBoard = {
+            width: this.refs.board.offsetWidth,
+            height: this.refs.board.offsetHeight
+        }
+        if(tempBoard.height > window.innerHeight){
+            tempBoard.height = window.innerHeight;
+        }
         // set wheel width and height
         let wheelSize = this.state.wheel;
-        wheelSize.width = (this.refs.board.offsetWidth - (this.refs.board.offsetWidth % 24)) / 24;
-        wheelSize.height = (this.refs.board.offsetHeight - (this.refs.board.offsetHeight % 24)) / 24;
+        wheelSize.width = (tempBoard.width - (tempBoard.width % 24)) / 24;
+        wheelSize.height = (tempBoard.height - (tempBoard.height % 24)) / 24;
         console.log('Grid Width: %s', wheelSize.width);
         console.log('Grid Height: %s', wheelSize.height);
         this.setState({wheel: wheelSize});
@@ -254,6 +275,28 @@ export default class App extends Component {
         this.drawAxle();
     }
 
+    handleDragMove(event, index){
+        console.log('image drag');
+        console.log(event.target._lastPos);
+        if(event.target._lastPos.x < 0 || event.target._lastPos.x >= (this.state.board.width - 2* this.state.wheel.width)){
+            let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
+            this.setWheelPos(index, tempPos);
+        }
+        if(event.target._lastPos.y < 0 || event.target._lastPos.y >= (this.state.board.height - this.state.wheel.height)){
+            let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
+            this.setWheelPos(index, tempPos);
+        }
+    }
+
+    setWheelPos(index, tempPos){
+        let wheelPos = this.state.wheelPos;
+        wheelPos[index].x = tempPos.x;
+        wheelPos[index].y = tempPos.y;
+        this.setState({
+            wheelPos: wheelPos
+        });
+    }
+
     fitWheelGrid(x, y, index){
         if(x%this.state.wheel.width < (this.state.wheel.width/2)) {
             x = Math.floor(x / this.state.wheel.width) * this.state.wheel.width;
@@ -269,6 +312,19 @@ export default class App extends Component {
         return {x: x, y:y};
     }
 
+    fitAllWheelsGrid(){
+        // fit wheels to grids
+        for(let index=0; index<this.state.wheelPos.length; index++){
+            let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
+            let wheelPos = this.state.wheelPos;
+            wheelPos[index].x = tempPos.x;
+            wheelPos[index].y = tempPos.y;
+            this.setState({
+                wheelPos: wheelPos
+            });
+        }
+    }
+
     drawGridLines(){
         let grid_lines = [];
         for(let h=-12; h<12; h++){
@@ -281,7 +337,7 @@ export default class App extends Component {
                     strokeWidth={1}
                 />)
         }
-        for(let w=-12; w<12; w++){
+        for(let w=-11; w<12; w++){
             grid_lines.push(
                 <GridLine
                     key={200+w}
@@ -329,24 +385,58 @@ export default class App extends Component {
     // axles functions
     axleDownHandle(event, i, j){
         console.log('Axle Down');
+        let tempPos = {
+            x: event.evt.offsetX,
+            y: event.evt.offsetY
+        };
+        this.setState({
+            axlesDown: tempPos
+        });
     }
     axleMoveHandle(event, i, j){
-
-    }
-    axleUpHandle(event, i, j){
-        console.log('Axle Up');
-        console.log('Axle Movement');
-        console.log(event);
-        console.log('(i, j) = (%s, %s)', i, j);
+        console.log('axle move');
+        console.log(event.evt.offsetX);
         let wheelPos = this.state.wheelPos;
-        wheelPos[i].x = event.target.attrs.points[0] - this.state.wheel.width/2;
-        wheelPos[i].y = event.target.attrs.points[1] - this.state.wheel.height/2;
-        wheelPos[j].x = event.target.attrs.points[2] - this.state.wheel.width/2;
-        wheelPos[j].y = event.target.attrs.points[3] - this.state.wheel.height/2;
+        wheelPos[i].x = wheelPos[i].x + (event.evt.offsetX - this.state.axlesDown.x);
+        wheelPos[i].y = wheelPos[i].y + (event.evt.offsetY - this.state.axlesDown.y);
+        wheelPos[j].x = wheelPos[j].x + (event.evt.offsetX - this.state.axlesDown.x);
+        wheelPos[j].y = wheelPos[j].y + (event.evt.offsetY - this.state.axlesDown.y);
 
         this.setState({
             wheelPos: wheelPos
         });
+        if(event.target._lastPos.x < 0 || event.target._lastPos.x >= (this.state.board.width - 2* this.state.wheel.width)){
+            let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
+            this.setWheelPos(index, tempPos);
+        }
+        if(event.target._lastPos.y < 0 || event.target._lastPos.y >= (this.state.board.height - this.state.wheel.height)){
+            let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
+            this.setWheelPos(index, tempPos);
+        }
+        let tempPos = {
+            x: event.evt.offsetX,
+            y: event.evt.offsetY
+        };
+        this.setState({
+            axlesDown: tempPos
+        });
+
+    }
+    axleUpHandle(event, i, j){
+        console.log('Axle Up');
+        console.log(event);
+        console.log('(i, j) = (%s, %s)', i, j);
+        // let wheelPos = this.state.wheelPos;
+        // wheelPos[i].x = event.target.attrs.points[0] - this.state.wheel.width/2;
+        // wheelPos[i].y = event.target.attrs.points[1] - this.state.wheel.height/2;
+        // wheelPos[j].x = event.target.attrs.points[2] - this.state.wheel.width/2;
+        // wheelPos[j].y = event.target.attrs.points[3] - this.state.wheel.height/2;
+        //
+        // this.setState({
+        //     wheelPos: wheelPos
+        // });
+        this.fitAllWheelsGrid();
+        this.drawAxle();
     }
 
 
@@ -434,9 +524,10 @@ export default class App extends Component {
                                                 key={i}
                                                 x={this.state.wheelPos[i].x}
                                                 y={this.state.wheelPos[i].y}
-                                                mouseUp={(event) => this.handleMouseUp(event, i)}
                                                 width={this.state.wheel.width}
                                                 height={this.state.wheel.height}
+                                                mouseUp={(event) => this.handleMouseUp(event, i)}
+                                                dragMove={(event) => this.handleDragMove(event, i)}
                                             />
                                         );
                                     })
