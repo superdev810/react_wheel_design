@@ -2,13 +2,13 @@ import React, { Component } from 'react';
 import {Button, FormGroup, ControlLabel, FormControl} from 'react-bootstrap';
 import {Layer, Stage, Group, Image, Line, Label, Tag, Text} from 'react-konva';
 let wheel = {
-    width: 30,
-    height: 100
+    width: 15,
+    height: 50
 }
 
 let board = {
-    width: 510,
-    height: 800
+    width: 270,
+    height: 900
 }
 
 class MyImage extends Component {
@@ -36,8 +36,8 @@ class MyImage extends Component {
             <Image
                 image={this.state.image}
                 draggable="true"
-                width={wheel.width}
-                height={wheel.height}
+                width={this.props.width}
+                height={this.props.height}
                 x={this.props.x}
                 y={this.props.y}
                 onMouseUp={this.props.mouseUp}
@@ -66,6 +66,34 @@ class GridLine extends Component {
                 stroke={this.props.stroke}
                 strokeWidth={this.props.strokeWidth}
                 tension={5}
+                onDragStart={this.props.onDragStart}
+                onDragMove={this.props.onDragMove}
+                onDragEnd={this.props.onDragEnd}
+            />
+        );
+    }
+}
+
+class Axle extends Component {
+    constructor(props){
+        super(props);
+    }
+
+    state = {
+        line: null
+    }
+
+    render() {
+        // console.log(this.props.points);
+        return (
+            <Line
+                draggable="true"
+                points={this.props.points}
+                x={this.props.x}
+                y={this.props.y}
+                stroke={this.props.stroke}
+                strokeWidth={this.props.strokeWidth}
+                tension={5}
             />
         );
     }
@@ -81,10 +109,25 @@ export default class App extends Component {
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.drawAxle = this.drawAxle.bind(this);
         this.fitWheelGrid = this.fitWheelGrid.bind(this);
+        this.changeBoardWidth = this.changeBoardWidth.bind(this);
+        this.changeBoardHeight = this.changeBoardHeight.bind(this);
+        this.boardChange = this.boardChange.bind(this);
+        // axles functions binding
+        this.axleDownHandle = this.axleDownHandle.bind(this);
+        this.axleMoveHandle = this.axleMoveHandle.bind(this);
+        this.axleUpHandle = this.axleUpHandle.bind(this);
     };
 
     componentWillMount(){
         this.state = {
+            board:{
+                width: 270,
+                height: 900
+            },
+            wheel: {
+                width: 15,
+                height: 50
+            },
             wheelCount: 2,
             vehicleName: '',
             contractArea: '',
@@ -97,22 +140,76 @@ export default class App extends Component {
 
         for (let i=0; i<this.state.wheelCount; i++) {
             this.state.wheelPos.push({
-                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*wheel.width + 0,
-                y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : -wheel.height
+                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*this.state.wheel.width + 0,
+                y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : -this.state.wheel.height
             })
         }
+
+        window.removeEventListener("resize", this.boardChange);
     }
+
+    componentDidMount(){
+        console.log(this.refs.board.offsetWidth);
+        console.log(this.refs.board.offsetHeight);
+
+        window.addEventListener("resize", this.boardChange);
+        this.boardChange();
+    }
+
     handleChange(event){
         console.log(event.target.value);
         let wheelPosTemp = [];
         this.setState({wheelCount: event.target.value});
         for (let i=0; i<event.target.value; i++) {
             wheelPosTemp.push({
-                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*wheel.width + 0,
-                y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : -wheel.height
+                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*this.state.wheel.width + 0,
+                y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : -this.state.wheel.height
             })
         }
         this.setState({wheelPos: wheelPosTemp});
+    }
+
+    boardChange(){
+        console.log(this.refs.board.offsetWidth);
+        console.log(this.refs.board.offsetHeight);
+
+
+        // set wheel width and height
+        let wheelSize = this.state.wheel;
+        wheelSize.width = (this.refs.board.offsetWidth - (this.refs.board.offsetWidth % 24)) / 24;
+        wheelSize.height = (this.refs.board.offsetHeight - (this.refs.board.offsetHeight % 24)) / 24;
+        console.log('Grid Width: %s', wheelSize.width);
+        console.log('Grid Height: %s', wheelSize.height);
+        this.setState({wheel: wheelSize});
+
+        let boardPan = this.state.board;
+        boardPan.width = wheelSize.width * 24;
+        boardPan.height = wheelSize.height * 24;
+        // boardPan.height = this.refs.board.offsetHeight;
+        this.setState({board: boardPan});
+
+        this.drawGridLines();
+
+        // fit wheels to grids
+        for(let index=0; index<this.state.wheelPos.length; index++){
+            let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
+            let wheelPos = this.state.wheelPos;
+            wheelPos[index].x = tempPos.x;
+            wheelPos[index].y = tempPos.y;
+            this.setState({
+                wheelPos: wheelPos
+            });
+        }
+    }
+
+    changeBoardWidth(event){
+        console.log('Change Board Size');
+        this.boardChange();
+    }
+
+    changeBoardHeight(event){
+        console.log('Change Board Size');
+        this.boardChange();
     }
 
     xPosChange(event, index){
@@ -128,11 +225,13 @@ export default class App extends Component {
     yPosChange(event, index){
         console.log(this.state.wheelPos);
         let wheelPos = this.state.wheelPos;
-        wheelPos[index].y = -event.target.value - wheel.height;
+        wheelPos[index].y = -event.target.value - this.state.wheel.height;
 
         this.setState({
             wheelPos: wheelPos
         });
+
+        // draw grid lines
         this.drawAxle();
     }
 
@@ -150,19 +249,21 @@ export default class App extends Component {
         this.setState({
             wheelPos: wheelPos
         });
+
+        // draw grid lines
         this.drawAxle();
     }
 
     fitWheelGrid(x, y, index){
-        if(x%wheel.width < (wheel.width/2)) {
-            x = Math.floor(x / wheel.width) * wheel.width;
+        if(x%this.state.wheel.width < (this.state.wheel.width/2)) {
+            x = Math.floor(x / this.state.wheel.width) * this.state.wheel.width;
         }else{
-            x = Math.ceil(x / wheel.width) * wheel.width;
+            x = Math.ceil(x / this.state.wheel.width) * this.state.wheel.width;
         }
-        if(y%wheel.height < (wheel.height/2)) {
-            y = Math.floor(y / wheel.height) * wheel.height;
+        if(y%this.state.wheel.height < (this.state.wheel.height/2)) {
+            y = Math.floor(y / this.state.wheel.height) * this.state.wheel.height;
         }else{
-            y = Math.ceil(y / wheel.height) * wheel.height;
+            y = Math.ceil(y / this.state.wheel.height) * this.state.wheel.height;
         }
         console.log("(x, y) = (%s, %s)", x, y);
         return {x: x, y:y};
@@ -170,26 +271,84 @@ export default class App extends Component {
 
     drawGridLines(){
         let grid_lines = [];
-        for(let h=0; h<(board.height/wheel.height); h++){
-            grid_lines.push(<GridLine key={100+h} points={[0, -h*wheel.height, board.width, -h*wheel.height]} x={0} y={0} stroke="#c0c0c0" strokeWidth={1}/>)
+        for(let h=-12; h<12; h++){
+            grid_lines.push(
+                <GridLine
+                    key={100+h}
+                    points={[-(this.state.wheel.width * 12), -h*this.state.wheel.height, (this.state.wheel.width * 11), -h*this.state.wheel.height]}
+                    x={0} y={0}
+                    stroke="#c0c0c0"
+                    strokeWidth={1}
+                />)
         }
-        for(let w=0; w<(board.width/wheel.width); w++){
-            grid_lines.push(<GridLine key={200+w} points={[w*wheel.width, 0, w*wheel.width, -board.height]} x={0} y={0} stroke="#c0c0c0" strokeWidth={1}/>)
+        for(let w=-12; w<12; w++){
+            grid_lines.push(
+                <GridLine
+                    key={200+w}
+                    points={[w*this.state.wheel.width, this.state.wheel.height * 12, w*this.state.wheel.width, -this.state.wheel.height * 12]}
+                    x={0} y={0}
+                    stroke="#c0c0c0"
+                    strokeWidth={1}
+                />)
         }
         return(grid_lines);
     }
 
     drawAxle(){
         let axles = [];
+
         for(let i=0; i<this.state.wheelPos.length-1; i++){
             for(let j=i+1; j<this.state.wheelPos.length; j++){
                 if(this.state.wheelPos[i].y == this.state.wheelPos[j].y){
-                    axles.push(<GridLine key={300+i*16+j} points={[this.state.wheelPos[i].x+wheel.width/2, this.state.wheelPos[i].y+wheel.height/2, this.state.wheelPos[j].x+wheel.width/2, this.state.wheelPos[j].y+wheel.height/2]} x={0} y={0} stroke="#4d4d4d" strokeWidth={10}/>);
+                    axles.push(
+                        <GridLine
+                            key={300+i*16+j}
+                            points={
+                                [
+                                    this.state.wheelPos[i].x+this.state.wheel.width/2,
+                                    this.state.wheelPos[i].y+this.state.wheel.height/2,
+                                    this.state.wheelPos[j].x+this.state.wheel.width/2,
+                                    this.state.wheelPos[j].y+this.state.wheel.height/2
+                                ]
+                            }
+                            x={0} y={0}
+                            stroke="#4d4d4d"
+                            strokeWidth={10}
+                            onDragStart={(event) => this.axleDownHandle(event, i, j)}
+                            onDragMove={(event) => this.axleMoveHandle(event, i, j)}
+                            onDragEnd={(event) => this.axleUpHandle(event, i, j)}
+                        />
+                    );
                 }
             }
         }
+        this.setState({axles: axles});
         return(axles);
     }
+
+    // axles functions
+    axleDownHandle(event, i, j){
+        console.log('Axle Down');
+    }
+    axleMoveHandle(event, i, j){
+
+    }
+    axleUpHandle(event, i, j){
+        console.log('Axle Up');
+        console.log('Axle Movement');
+        console.log(event);
+        console.log('(i, j) = (%s, %s)', i, j);
+        let wheelPos = this.state.wheelPos;
+        wheelPos[i].x = event.target.attrs.points[0] - this.state.wheel.width/2;
+        wheelPos[i].y = event.target.attrs.points[1] - this.state.wheel.height/2;
+        wheelPos[j].x = event.target.attrs.points[2] - this.state.wheel.width/2;
+        wheelPos[j].y = event.target.attrs.points[3] - this.state.wheel.height/2;
+
+        this.setState({
+            wheelPos: wheelPos
+        });
+    }
+
 
     render() {
         const {wheelPos} = this.state;
@@ -197,11 +356,12 @@ export default class App extends Component {
         return (
             <div className="container-fluid">
                 <div className="col-md-12 container-header">
-                    <h1>Vehicle Management</h1>
+                    <h1 className="col-md-5">Vehicle Management</h1>
                 </div>
-                <div className="row container">
+                <div className="row container mt-30">
                     <div className="col-md-4 text-center">
                         <h9 className="col-md-12 text-center container-title">WHEEL LOCATION COORDINATES</h9>
+                        <a target="_blank" href="http://features.pavementdesigner.org/resources/" className="btn btn-primary">View Resources</a>
                         <FormGroup controlId="formControlsSelect">
                             <ControlLabel>Select Wheels:</ControlLabel>
                             <FormControl componentClass="select" placeholder="Select Wheels" value={this.state.wheelCount} onChange={this.handleChange}>
@@ -227,49 +387,87 @@ export default class App extends Component {
                                 return(
                                     <div key={i} className="text-input-item">
                                         <span className="text-input-number">{i+1}</span>
-                                        <input type="text" placeholder="0.00" className="text-width" value={wheelPos?wheelPos.x:"0.00"} onChange={(event) => this.xPosChange(event, i)}/>
-                                        <input type="text" placeholder="0.00" className="text-width" value={wheelPos?-wheelPos.y-wheel.height:"0.00"} onChange={(event) => this.yPosChange(event, i)}/>
+                                        <input
+                                            type="text"
+                                            placeholder="0.00"
+                                            className="text-width"
+                                            value={wheelPos?wheelPos.x:"0.00"}
+                                            onChange={(event) => this.xPosChange(event, i)}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="0.00"
+                                            className="text-width"
+                                            value={wheelPos?-wheelPos.y-this.state.wheel.height:"0.00"}
+                                            onChange={(event) => this.yPosChange(event, i)}
+                                        />
                                     </div>
                                 );
                             })
                         }
                     </div>
-                    <div className="col-md-6 text-center">
+                    <div className="text-center col-md-6" ref="board" onChange={() => this.boardChange}>
                         <h7 className="col-md-12 text-center container-title">CUSTOM VEHICLE DISPLAY</h7>
-                        <Stage ref="stage" width={board.width} height={board.height} y={board.height} className="mt-30 stage-border">
+                        <Stage
+                            ref="stage"
+                            width={this.state.board.width}
+                            height={this.state.board.height}
+                            y={this.state.wheel.height * 12}
+                            x={this.state.wheel.width * 12}
+                            className="mt-30 stage-border"
+                        >
                             <Layer ref="background">
                                 {
                                     this.drawGridLines()
                                 }
                             </Layer>
                             <Layer ref="axle">
-
                                 {
-                                    this.drawAxle()
+                                    this.state.axles
                                 }
                             </Layer>
                             <Layer ref="layer">
                                 {
                                     this.state.wheelPos.map((wheelPos, i) => {
                                         return(
-                                            <MyImage key={i} x={this.state.wheelPos[i].x} y={this.state.wheelPos[i].y} mouseUp={(event) => this.handleMouseUp(event, i)}>
-                                            </MyImage>
+                                            <MyImage
+                                                key={i}
+                                                x={this.state.wheelPos[i].x}
+                                                y={this.state.wheelPos[i].y}
+                                                mouseUp={(event) => this.handleMouseUp(event, i)}
+                                                width={this.state.wheel.width}
+                                                height={this.state.wheel.height}
+                                            />
                                         );
                                     })
                                 }
                                 {
                                     this.state.wheelPos.map((wheelPos, i) => {
                                         return(
-                                            <Label key={(i+1) * 1000} x={wheelPos.x+wheel.width/2} y={wheelPos.y - 10} opacity="0.75">
-                                                <Tag key={(i+1) * 2000} fill="green" pointerDirection="down" pointerWidth={10} pointerHeight={10} lineJoin="round" shadowColor="black" shadowBlur={10} shadowOffset={10} shadowOpacity={0.5}>
-
-                                                </Tag>
-                                                <Text key={(i+1) * 3000} text={i+1} fontSize={15} padding={5} fill="white" />
+                                            <Label key={(i+1) * 1000} x={wheelPos.x+this.state.wheel.width/2} y={wheelPos.y - 10} opacity="0.75">
+                                                <Tag
+                                                    key={(i+1) * 2000}
+                                                    fill="green"
+                                                    pointerDirection="down"
+                                                    pointerWidth={10}
+                                                    pointerHeight={10}
+                                                    lineJoin="round"
+                                                    shadowColor="black"
+                                                    shadowBlur={10}
+                                                    shadowOffset={10}
+                                                    shadowOpacity={0.5}
+                                                />
+                                                <Text
+                                                    key={(i+1) * 3000}
+                                                    text={"(" + wheelPos.x + ", " + (-wheelPos.y-this.state.wheel.height) + ")"}
+                                                    fontSize={15}
+                                                    padding={5}
+                                                    fill="white"
+                                                />
                                             </Label>
                                         );
                                     })
                                 }
-                                {this.state.axles}
                             </Layer>
                         </Stage>
                     </div>
@@ -278,9 +476,9 @@ export default class App extends Component {
                         <FormGroup controlId="formControlsSelect">
                             <ControlLabel>VEHICLE NAME</ControlLabel>
                             <FormControl type="text" value={this.state.vehicleName} placeholder="Vehicle Name"/>
-                            <ControlLabel bsClass="mt-30">CONTRACT AREA</ControlLabel>
+                            <ControlLabel bsClass="mt-30">CONTACT AREA</ControlLabel>
                             <FormControl type="text" value={this.state.vehicleName} placeholder="Contract Area"/>
-                            <ControlLabel bsClass="mt-30">CONTRACT PRESSURE</ControlLabel>
+                            <ControlLabel bsClass="mt-30">CONTACT PRESSURE</ControlLabel>
                             <FormControl type="text" value={this.state.vehicleName} placeholder="Contract Pressure"/>
                             <ControlLabel bsClass="mt-30">GROSS WEIGHT</ControlLabel>
                             <FormControl type="text" value={this.state.vehicleName} placeholder="Gross Weight"/>
