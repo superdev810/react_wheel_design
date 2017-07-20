@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {Button, FormGroup, ControlLabel, FormControl} from 'react-bootstrap';
+import {Button, FormGroup, ControlLabel, FormControl, Modal} from 'react-bootstrap';
 import {Layer, Stage, Group, Image, Line, Label, Tag, Text} from 'react-konva';
 let wheel = {
     width: 15,
@@ -127,13 +127,17 @@ export default class App extends Component {
         this.changeBoardWidth = this.changeBoardWidth.bind(this);
         this.changeBoardHeight = this.changeBoardHeight.bind(this);
         this.boardChange = this.boardChange.bind(this);
+        this.handleSetSize = this.handleSetSize.bind(this);
+        this.handleBoardWidth = this.handleBoardWidth.bind(this);
+        this.handleBoardHeight = this.handleBoardHeight.bind(this);
+
     };
 
     componentWillMount(){
         this.state = {
             board:{
-                width: 270,
-                height: 900
+                width: 570,
+                height: 600
             },
             wheel: {
                 width: 15,
@@ -150,7 +154,12 @@ export default class App extends Component {
                 x: null,
                 y: null
             },
-            axles: []
+            axles: [],
+            input: {
+                width: 570,
+                height: 600
+            },
+            show: false
         };
 
         for (let i=0; i<this.state.wheelCount; i++) {
@@ -177,11 +186,14 @@ export default class App extends Component {
         this.setState({wheelCount: event.target.value});
         for (let i=0; i<event.target.value; i++) {
             wheelPosTemp.push({
-                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*this.state.wheel.width - (this.state.wheel.width * 12),
-                y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : 11 * this.state.wheel.height
+                x: i*this.state.wheel.width - (this.state.wheel.width * 12),
+                y: 11 * this.state.wheel.height
             })
         }
-        this.setState({wheelPos: wheelPosTemp});
+        this.setState({wheelPos: wheelPosTemp}, function () {
+            this.drawAxle();
+        });
+
     }
 
     boardChange(){
@@ -189,12 +201,13 @@ export default class App extends Component {
         console.log(this.refs.board.offsetHeight);
 
         let tempBoard = {
-            width: this.refs.board.offsetWidth,
-            height: this.refs.board.offsetHeight
+            width: this.state.board.width,
+            height: this.state.board.height
         }
-        if(tempBoard.height > window.innerHeight){
-            tempBoard.height = window.innerHeight;
-        }
+        console.log('Temp Board Size: ', tempBoard);
+        // if(tempBoard.height > window.innerHeight){
+        //     tempBoard.height = window.innerHeight;
+        // }
         // set wheel width and height
         let wheelSize = this.state.wheel;
         wheelSize.width = (tempBoard.width - (tempBoard.width % 24)) / 24;
@@ -221,6 +234,17 @@ export default class App extends Component {
                 wheelPos: wheelPos
             });
         }
+
+        // fit wheels to default position
+        let wheelPosTemp = [];
+
+        for (let i=0; i<this.state.wheelCount; i++) {
+            wheelPosTemp.push({
+                x: i*this.state.wheel.width - (this.state.wheel.width * 12),
+                y: 11 * this.state.wheel.height
+            })
+        }
+        this.setState({wheelPos: wheelPosTemp});
     }
 
     changeBoardWidth(event){
@@ -331,7 +355,7 @@ export default class App extends Component {
             grid_lines.push(
                 <GridLine
                     key={100+h}
-                    points={[-(this.state.wheel.width * 12), -h*this.state.wheel.height, (this.state.wheel.width * 11), -h*this.state.wheel.height]}
+                    points={[-(this.state.wheel.width * 12), -h*this.state.wheel.height, (this.state.wheel.width * 12), -h*this.state.wheel.height]}
                     x={0} y={0}
                     stroke="#c0c0c0"
                     strokeWidth={1}
@@ -439,19 +463,59 @@ export default class App extends Component {
         this.drawAxle();
     }
 
+    handleSetSize(){
+        console.log('Set Size Handle');
+        console.log(this.state.input);
+        this.setState({
+            board: this.state.input
+        }, function () {
+            this.boardChange();
+        })
+        // this.refs.board.offsetWidth = this.state.input.width;
+        // this.refs.board.offsetHeight = this.state.input.height;
+    }
+
+    handleBoardWidth(event){
+        let input = this.state.board;
+        input.width = event.target.value;
+        this.setState({
+            board: input
+        }, function () {
+            this.boardChange();
+        })
+    }
+
+    handleBoardHeight(event){
+        let input = this.state.board;
+        input.height = event.target.value;
+        this.setState({
+            board: input
+        }, function () {
+            this.boardChange();
+        })
+    }
 
     render() {
         const {wheelPos} = this.state;
-
+        let close = () => this.setState({ show: false});
         return (
             <div className="container-fluid">
-                <div className="col-md-12 container-header">
-                    <h1 className="col-md-5">Vehicle Management</h1>
+                <div className="container-header">
+                    <h1 className="">Vehicle Management</h1>
+                    <input type="number" className="text-width ml-30" placeholder="Width" onChange={this.handleBoardWidth}/>
+                    <input type="number" className="text-width ml-30" placeholder="Height" onChange={this.handleBoardHeight}/>
+                    {/*<button className="btn btn-primary ml-30" onClick={this.handleSetSize}>Set Size</button>*/}
                 </div>
-                <div className="row container mt-30">
-                    <div className="col-md-4 text-center">
+                <div className="row mt-30">
+                    <div className="text-center" style={{width:'20%', float: 'left'}}>
                         <h9 className="col-md-12 text-center container-title">WHEEL LOCATION COORDINATES</h9>
-                        <a target="_blank" href="http://features.pavementdesigner.org/resources/" className="btn btn-primary">View Resources</a>
+                        <Button
+                            bsStyle="primary"
+                            bsSize="large"
+                            onClick={() => this.setState({ show: true})}
+                        >
+                            View Resource
+                        </Button>
                         <FormGroup controlId="formControlsSelect">
                             <ControlLabel>Select Wheels:</ControlLabel>
                             <FormControl componentClass="select" placeholder="Select Wheels" value={this.state.wheelCount} onChange={this.handleChange}>
@@ -496,7 +560,7 @@ export default class App extends Component {
                             })
                         }
                     </div>
-                    <div className="text-center col-md-6" ref="board" onChange={() => this.boardChange}>
+                    <div className="text-center ml-30 mb-30" style={{width:this.state.board.width, height:this.state.board.height, float: 'left'}} ref="board" onChange={() => this.boardChange}>
                         <h7 className="col-md-12 text-center container-title">CUSTOM VEHICLE DISPLAY</h7>
                         <Stage
                             ref="stage"
@@ -504,7 +568,7 @@ export default class App extends Component {
                             height={this.state.board.height}
                             y={this.state.wheel.height * 12}
                             x={this.state.wheel.width * 12}
-                            className="mt-30 stage-border"
+                            className="mt-100 stage-border mb-30"
                         >
                             <Layer ref="background">
                                 {
@@ -562,7 +626,7 @@ export default class App extends Component {
                             </Layer>
                         </Stage>
                     </div>
-                    <div className="col-md-2 text-center no-padding">
+                    <div className="text-center no-padding ml-30"  style={{width:'15%', float: 'left'}}>
                         <h7 className="col-md-12 text-center container-title">VEHICLE INFORMATION</h7>
                         <FormGroup controlId="formControlsSelect">
                             <ControlLabel>VEHICLE NAME</ControlLabel>
@@ -583,6 +647,23 @@ export default class App extends Component {
 
                     </div>
                 </div>
+                <Modal
+                    show={this.state.show}
+                    onHide={close}
+                    container={this}
+                    bsSize="large"
+                    aria-labelledby="contained-modal-title"
+                >
+                    <Modal.Header closeButton>
+                        <Modal.Title id="contained-modal-title">View Resources</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <iframe src="http://features.pavementdesigner.org/resources/" height={700} width="100%" frameBorder={0}></iframe>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button onClick={close}>Go To Main Screen</Button>
+                    </Modal.Footer>
+                </Modal>
             </div>
         );
     }
