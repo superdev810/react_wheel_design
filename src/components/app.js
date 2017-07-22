@@ -135,6 +135,8 @@ export default class App extends Component {
 
     componentWillMount(){
         this.state = {
+            sizeRatio: 24,
+            unitLength: 15,
             board:{
                 width: 570,
                 height: 600
@@ -164,7 +166,7 @@ export default class App extends Component {
 
         for (let i=0; i<this.state.wheelCount; i++) {
             this.state.wheelPos.push({
-                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*this.state.wheel.width - (this.state.wheel.width * 12),
+                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*this.state.wheel.width - (this.state.wheel.width * this.state.sizeRatio / 2),
                 y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : -this.state.wheel.height
             })
         }
@@ -186,7 +188,7 @@ export default class App extends Component {
         this.setState({wheelCount: event.target.value});
         for (let i=0; i<event.target.value; i++) {
             wheelPosTemp.push({
-                x: i*this.state.wheel.width - (this.state.wheel.width * 12),
+                x: i*this.state.wheel.width - (this.state.wheel.width * this.state.sizeRatio / 2),
                 y: 11 * this.state.wheel.height
             })
         }
@@ -210,15 +212,15 @@ export default class App extends Component {
         // }
         // set wheel width and height
         let wheelSize = this.state.wheel;
-        wheelSize.width = (tempBoard.width - (tempBoard.width % 24)) / 24;
-        wheelSize.height = (tempBoard.height - (tempBoard.height % 24)) / 24;
+        wheelSize.width = (tempBoard.width - (tempBoard.width % this.state.sizeRatio)) / this.state.sizeRatio;
+        wheelSize.height = (tempBoard.height - (tempBoard.height % this.state.sizeRatio)) / this.state.sizeRatio;
         console.log('Grid Width: %s', wheelSize.width);
         console.log('Grid Height: %s', wheelSize.height);
         this.setState({wheel: wheelSize});
 
         let boardPan = this.state.board;
-        boardPan.width = wheelSize.width * 24;
-        boardPan.height = wheelSize.height * 24;
+        boardPan.width = wheelSize.width * this.state.sizeRatio;
+        boardPan.height = wheelSize.height * this.state.sizeRatio;
         // boardPan.height = this.refs.board.offsetHeight;
         this.setState({board: boardPan});
 
@@ -240,7 +242,7 @@ export default class App extends Component {
 
         for (let i=0; i<this.state.wheelCount; i++) {
             wheelPosTemp.push({
-                x: i*this.state.wheel.width - (this.state.wheel.width * 12),
+                x: i*this.state.wheel.width - (this.state.wheel.width * this.state.sizeRatio / 2),
                 y: 11 * this.state.wheel.height
             })
         }
@@ -351,21 +353,21 @@ export default class App extends Component {
 
     drawGridLines(){
         let grid_lines = [];
-        for(let h=-12; h<12; h++){
+        for(let h=-this.state.sizeRatio / 2; h<this.state.sizeRatio / 2; h++){
             grid_lines.push(
                 <GridLine
                     key={100+h}
-                    points={[-(this.state.wheel.width * 12), -h*this.state.wheel.height, (this.state.wheel.width * 12), -h*this.state.wheel.height]}
+                    points={[-(this.state.wheel.width * this.state.sizeRatio / 2), -h*this.state.wheel.height, (this.state.wheel.width * this.state.sizeRatio / 2), -h*this.state.wheel.height]}
                     x={0} y={0}
                     stroke="#c0c0c0"
                     strokeWidth={1}
                 />)
         }
-        for(let w=-11; w<12; w++){
+        for(let w=-11; w<this.state.sizeRatio / 2; w++){
             grid_lines.push(
                 <GridLine
                     key={200+w}
-                    points={[w*this.state.wheel.width, this.state.wheel.height * 12, w*this.state.wheel.width, -this.state.wheel.height * 12]}
+                    points={[w*this.state.wheel.width, this.state.wheel.height * this.state.sizeRatio / 2, w*this.state.wheel.width, -this.state.wheel.height * this.state.sizeRatio / 2]}
                     x={0} y={0}
                     stroke="#c0c0c0"
                     strokeWidth={1}
@@ -566,8 +568,8 @@ export default class App extends Component {
                             ref="stage"
                             width={this.state.board.width}
                             height={this.state.board.height}
-                            y={this.state.wheel.height * 12}
-                            x={this.state.wheel.width * 12}
+                            y={this.state.wheel.height * this.state.sizeRatio / 2}
+                            x={this.state.wheel.width * this.state.sizeRatio / 2}
                             className="mt-100 stage-border mb-30"
                         >
                             <Layer ref="background">
