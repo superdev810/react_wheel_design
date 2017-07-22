@@ -17,8 +17,6 @@
 .text-width{
     width: 100px;
     border-radius: 20px;
-    margin-left: 10px;
-    margin-right: 10px;
     padding-left: 5px;
 }
 
@@ -29,7 +27,7 @@
 
 .text-input-number {
     width: 20px;
-    margin-right: 30px;
+    margin-right: 10px;
     font-weight: bold;
 }
 

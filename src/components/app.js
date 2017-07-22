@@ -247,7 +247,9 @@ export default class App extends Component {
                 y: 11 * this.state.wheel.height
             })
         }
-        this.setState({wheelPos: wheelPosTemp});
+        this.setState({wheelPos: wheelPosTemp}, function () {
+            this.drawAxle();
+        });
     }
 
     changeBoardWidth(event){
@@ -400,7 +402,7 @@ export default class App extends Component {
                             }
                             x={0} y={0}
                             stroke="#4d4d4d"
-                            strokeWidth={10}
+                            strokeWidth={this.state.wheel.height/4}
                             onDragStart={(event) => this.axleDownHandle(event, i, j)}
                             onDragMove={(event) => this.axleMoveHandle(event, i, j)}
                             onDragEnd={(event) => this.axleUpHandle(event, i, j)}
@@ -489,7 +491,9 @@ export default class App extends Component {
             board: input
         }, function () {
             this.boardChange();
+            this.drawAxle();
         })
+
     }
 
     handleBoardHeight(event){
@@ -499,6 +503,7 @@ export default class App extends Component {
             board: input
         }, function () {
             this.boardChange();
+            this.drawAxle();
         })
     }
 
@@ -583,7 +588,7 @@ export default class App extends Component {
                         {
                             this.state.wheelPos.map((wheelPos, i) => {
                                 return(
-                                    <div key={i} className="text-input-item">
+                                    <div key={i} className="text-input-item" style={{float: 'left'}}>
                                         <span className="text-input-number">{i+1}</span>
                                         <input
                                             type="text"
