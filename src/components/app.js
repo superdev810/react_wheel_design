@@ -23,7 +23,7 @@ class MyImage extends Component {
         const image = new window.Image();
         image.src = '/assets/img/right.png';
         image.onload = () => {
-            console.log('Load')
+            // console.log('Load')
             this.setState({
                 image: image
             });
@@ -57,7 +57,7 @@ class GridLine extends Component {
     }
 
     render() {
-        // console.log(this.props.points);
+        // // console.log(this.props.points);
         return (
             <Line
                 draggable="false"
@@ -85,7 +85,7 @@ class Axle extends Component {
     }
 
     render() {
-        // console.log(this.props.points);
+        // // console.log(this.props.points);
         return (
             <Line
                 draggable="true"
@@ -130,6 +130,7 @@ export default class App extends Component {
         this.handleSetSize = this.handleSetSize.bind(this);
         this.handleBoardWidth = this.handleBoardWidth.bind(this);
         this.handleBoardHeight = this.handleBoardHeight.bind(this);
+        this.renderStandardAxis = this.renderStandardAxis.bind(this);
 
     };
 
@@ -175,15 +176,15 @@ export default class App extends Component {
     }
 
     componentDidMount(){
-        console.log(this.refs.board.offsetWidth);
-        console.log(this.refs.board.offsetHeight);
+        // console.log(this.refs.board.offsetWidth);
+        // console.log(this.refs.board.offsetHeight);
 
         window.addEventListener("resize", this.boardChange);
         this.boardChange();
     }
 
     handleChange(event){
-        console.log(event.target.value);
+        // console.log(event.target.value);
         let wheelPosTemp = [];
         this.setState({wheelCount: event.target.value});
         for (let i=0; i<event.target.value; i++) {
@@ -199,14 +200,14 @@ export default class App extends Component {
     }
 
     boardChange(){
-        console.log(this.refs.board.offsetWidth);
-        console.log(this.refs.board.offsetHeight);
+        // console.log(this.refs.board.offsetWidth);
+        // console.log(this.refs.board.offsetHeight);
 
         let tempBoard = {
             width: this.state.board.width,
             height: this.state.board.height
         }
-        console.log('Temp Board Size: ', tempBoard);
+        // console.log('Temp Board Size: ', tempBoard);
         // if(tempBoard.height > window.innerHeight){
         //     tempBoard.height = window.innerHeight;
         // }
@@ -214,8 +215,8 @@ export default class App extends Component {
         let wheelSize = this.state.wheel;
         wheelSize.width = (tempBoard.width - (tempBoard.width % this.state.sizeRatio)) / this.state.sizeRatio;
         wheelSize.height = (tempBoard.height - (tempBoard.height % this.state.sizeRatio)) / this.state.sizeRatio;
-        console.log('Grid Width: %s', wheelSize.width);
-        console.log('Grid Height: %s', wheelSize.height);
+        // console.log('Grid Width: %s', wheelSize.width);
+        // console.log('Grid Height: %s', wheelSize.height);
         this.setState({wheel: wheelSize});
 
         let boardPan = this.state.board;
@@ -250,29 +251,32 @@ export default class App extends Component {
     }
 
     changeBoardWidth(event){
-        console.log('Change Board Size');
+        // console.log('Change Board Size');
         this.boardChange();
     }
 
     changeBoardHeight(event){
-        console.log('Change Board Size');
+        // console.log('Change Board Size');
         this.boardChange();
     }
 
     xPosChange(event, index){
-        console.log(this.state.wheelPos);
+        // console.log(this.state.wheelPos);
         let wheelPos = this.state.wheelPos;
-        wheelPos[index].x = event.target.value;
+
+        wheelPos[index].x = this.revertStandardAxis(event.target.value, 'x');
         this.setState({
             wheelPos: wheelPos
         });
         this.drawAxle();
+        this.fitAllWheelsGrid();
     }
 
     yPosChange(event, index){
-        console.log(this.state.wheelPos);
+        // console.log(this.state.wheelPos);
         let wheelPos = this.state.wheelPos;
-        wheelPos[index].y = -event.target.value - this.state.wheel.height;
+        // let unitCoordinate = this.renderStandardAxis(event.target.value, 'y');
+        wheelPos[index].y = this.revertStandardAxis(-event.target.value, 'y');
 
         this.setState({
             wheelPos: wheelPos
@@ -280,11 +284,12 @@ export default class App extends Component {
 
         // draw grid lines
         this.drawAxle();
+        this.fitAllWheelsGrid();
     }
 
     handleMouseUp(event, index){
-        console.log('Parent Callback Mouse Up');
-        console.log(event.target);
+        // console.log('Parent Callback Mouse Up');
+        // console.log(event.target);
         let x = event.target.attrs.x;
         let y = event.target.attrs.y;
         // let index = event.target.index;
@@ -302,8 +307,8 @@ export default class App extends Component {
     }
 
     handleDragMove(event, index){
-        console.log('image drag');
-        console.log(event.target._lastPos);
+        // console.log('image drag');
+        // console.log(event.target._lastPos);
         if(event.target._lastPos.x < 0 || event.target._lastPos.x >= (this.state.board.width - 2* this.state.wheel.width)){
             let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
             this.setWheelPos(index, tempPos);
@@ -334,7 +339,7 @@ export default class App extends Component {
         }else{
             y = Math.ceil(y / this.state.wheel.height) * this.state.wheel.height;
         }
-        console.log("(x, y) = (%s, %s)", x, y);
+        // console.log("(x, y) = (%s, %s)", x, y);
         return {x: x, y:y};
     }
 
@@ -410,7 +415,7 @@ export default class App extends Component {
 
     // axles functions
     axleDownHandle(event, i, j){
-        console.log('Axle Down');
+        // console.log('Axle Down');
         let tempPos = {
             x: event.evt.offsetX,
             y: event.evt.offsetY
@@ -420,8 +425,8 @@ export default class App extends Component {
         });
     }
     axleMoveHandle(event, i, j){
-        console.log('axle move');
-        console.log(event.evt.offsetX);
+        // console.log('axle move');
+        // console.log(event.evt.offsetX);
         let wheelPos = this.state.wheelPos;
         wheelPos[i].x = wheelPos[i].x + (event.evt.offsetX - this.state.axlesDown.x);
         wheelPos[i].y = wheelPos[i].y + (event.evt.offsetY - this.state.axlesDown.y);
@@ -449,9 +454,9 @@ export default class App extends Component {
 
     }
     axleUpHandle(event, i, j){
-        console.log('Axle Up');
-        console.log(event);
-        console.log('(i, j) = (%s, %s)', i, j);
+        // console.log('Axle Up');
+        // console.log(event);
+        // console.log('(i, j) = (%s, %s)', i, j);
         // let wheelPos = this.state.wheelPos;
         // wheelPos[i].x = event.target.attrs.points[0] - this.state.wheel.width/2;
         // wheelPos[i].y = event.target.attrs.points[1] - this.state.wheel.height/2;
@@ -466,8 +471,8 @@ export default class App extends Component {
     }
 
     handleSetSize(){
-        console.log('Set Size Handle');
-        console.log(this.state.input);
+        // console.log('Set Size Handle');
+        // console.log(this.state.input);
         this.setState({
             board: this.state.input
         }, function () {
@@ -497,9 +502,46 @@ export default class App extends Component {
         })
     }
 
+    renderStandardAxis(realCoordinate, axis){
+        let unit;
+        if(axis == 'x') {
+            unit = Math.floor(realCoordinate / this.state.wheel.width);
+        } else{
+            unit = Math.floor(realCoordinate / this.state.wheel.height);
+        }
+        console.log(unit);
+        return unit * this.state.unitLength;
+    }
+
+    revertStandardAxis(unitCoordinate, axis){
+        let real;
+        if(axis == 'x') {
+            real = unitCoordinate / this.state.unitLength;
+            real = real * this.state.wheel.width;
+        } else{
+            real = Math.floor(unitCoordinate / this.state.unitLength);
+            real = (real) * this.state.wheel.height;
+        }
+        console.log(real);
+        return real;
+    }
+
     render() {
         const {wheelPos} = this.state;
         let close = () => this.setState({ show: false});
+        let renderAxis = (realCoordinate, axis) => {
+            let unit;
+            console.log('Real Coordinate: ', realCoordinate);
+            console.log()
+            if(axis == 'x') {
+                unit = realCoordinate / this.state.wheel.width;
+            } else{
+                unit = realCoordinate / this.state.wheel.height;
+            }
+            console.log(unit * this.state.unitLength);
+            return unit * this.state.unitLength;
+        };
+
         return (
             <div className="container-fluid">
                 <div className="container-header">
@@ -547,14 +589,14 @@ export default class App extends Component {
                                             type="text"
                                             placeholder="0.00"
                                             className="text-width"
-                                            value={wheelPos?wheelPos.x:"0.00"}
+                                            value={wheelPos?this.renderStandardAxis(wheelPos.x, 'x'):"0.00"}
                                             onChange={(event) => this.xPosChange(event, i)}
                                         />
                                         <input
                                             type="text"
                                             placeholder="0.00"
                                             className="text-width"
-                                            value={wheelPos?-wheelPos.y-this.state.wheel.height:"0.00"}
+                                            value={wheelPos?this.renderStandardAxis(-wheelPos.y-this.state.wheel.height, 'y'):"0.00"}
                                             onChange={(event) => this.yPosChange(event, i)}
                                         />
                                     </div>
@@ -616,7 +658,7 @@ export default class App extends Component {
                                                 />
                                                 <Text
                                                     key={(i+1) * 3000}
-                                                    text={"(" + wheelPos.x + ", " + (-wheelPos.y-this.state.wheel.height) + ")"}
+                                                    text={"(" + this.renderStandardAxis(wheelPos.x, 'x') + ", " + this.renderStandardAxis(-wheelPos.y-this.state.wheel.height, 'y') + ")"}
                                                     fontSize={15}
                                                     padding={5}
                                                     fill="white"
