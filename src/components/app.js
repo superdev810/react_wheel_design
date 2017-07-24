@@ -146,7 +146,7 @@ export default class App extends Component {
                 width: 15,
                 height: 50
             },
-            wheelCount: 2,
+            wheelCount: 3,
             vehicleName: '',
             contractArea: '',
             contractPressure: '',
@@ -167,7 +167,7 @@ export default class App extends Component {
 
         for (let i=0; i<this.state.wheelCount; i++) {
             this.state.wheelPos.push({
-                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*this.state.wheel.width - (this.state.wheel.width * this.state.sizeRatio / 2),
+                x: this.state.wheelPos[i] ? this.state.wheelPos[i].x : i*this.state.wheel.width,
                 y: this.state.wheelPos[i] ? this.state.wheelPos[i].y : -this.state.wheel.height
             })
         }
@@ -189,8 +189,8 @@ export default class App extends Component {
         this.setState({wheelCount: event.target.value});
         for (let i=0; i<event.target.value; i++) {
             wheelPosTemp.push({
-                x: i*this.state.wheel.width - (this.state.wheel.width * this.state.sizeRatio / 2),
-                y: 11 * this.state.wheel.height
+                x: i*this.state.wheel.width,
+                y: -this.state.wheel.height
             })
         }
         this.setState({wheelPos: wheelPosTemp}, function () {
@@ -243,8 +243,8 @@ export default class App extends Component {
 
         for (let i=0; i<this.state.wheelCount; i++) {
             wheelPosTemp.push({
-                x: i*this.state.wheel.width - (this.state.wheel.width * this.state.sizeRatio / 2),
-                y: 11 * this.state.wheel.height
+                x: i*this.state.wheel.width,
+                y: -this.state.wheel.height
             })
         }
         this.setState({wheelPos: wheelPosTemp}, function () {
@@ -266,37 +266,63 @@ export default class App extends Component {
         // console.log(this.state.wheelPos);
         let wheelPos = this.state.wheelPos;
 
+        let tempPos = {
+            x: wheelPos[index].x,
+            y: wheelPos[index].y
+        };
+
         wheelPos[index].x = this.revertStandardAxis(event.target.value, 'x');
+
+        this.setState({
+            axlesDown: tempPos
+        });
         this.setState({
             wheelPos: wheelPos
+        }, function () {
+            this.drawAxle();
         });
-        this.drawAxle();
-        this.fitAllWheelsGrid();
+        console.log('x: ', wheelPos[index].x+this.state.wheel.width/2)
+        console.log('x,y: ', wheelPos[index]);
+        // this.fitAllWheelsGrid();
     }
 
     yPosChange(event, index){
         // console.log(this.state.wheelPos);
         let wheelPos = this.state.wheelPos;
         // let unitCoordinate = this.renderStandardAxis(event.target.value, 'y');
+        let tempPos = {
+            x: wheelPos[index].x,
+            y: wheelPos[index].y
+        };
         wheelPos[index].y = this.revertStandardAxis(-event.target.value, 'y');
+
+
+        this.setState({
+            axlesDown: tempPos
+        });
 
         this.setState({
             wheelPos: wheelPos
+        }, function () {
+            // draw grid lines
+            this.drawAxle();
         });
 
-        // draw grid lines
-        this.drawAxle();
-        this.fitAllWheelsGrid();
+        // this.fitAllWheelsGrid();
     }
 
     handleMouseUp(event, index){
-        // console.log('Parent Callback Mouse Up');
-        // console.log(event.target);
+        console.log('Parent Callback Mouse Up');
+        console.log(event.target);
         let x = event.target.attrs.x;
         let y = event.target.attrs.y;
         // let index = event.target.index;
 
-        let tempPos = this.fitWheelGrid(x, y, index);
+        // let tempPos = this.fitWheelGrid(x, y, index);
+        let tempPos = {
+            x: x,
+            y: y
+        };
         let wheelPos = this.state.wheelPos;
         wheelPos[index].x = tempPos.x;
         wheelPos[index].y = tempPos.y;
@@ -309,14 +335,16 @@ export default class App extends Component {
     }
 
     handleDragMove(event, index){
-        // console.log('image drag');
-        // console.log(event.target._lastPos);
+        console.log('image drag');
+        console.log(event.target._lastPos);
         if(event.target._lastPos.x < 0 || event.target._lastPos.x >= (this.state.board.width - 2* this.state.wheel.width)){
-            let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
+            // let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
+            let tempPos = this.state.wheelPos[index];
             this.setWheelPos(index, tempPos);
         }
         if(event.target._lastPos.y < 0 || event.target._lastPos.y >= (this.state.board.height - this.state.wheel.height)){
-            let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
+            // let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
+            let tempPos = this.state.wheelPos[index];
             this.setWheelPos(index, tempPos);
         }
     }
@@ -360,21 +388,21 @@ export default class App extends Component {
 
     drawGridLines(){
         let grid_lines = [];
-        for(let h=-this.state.sizeRatio / 2; h<this.state.sizeRatio / 2; h++){
+        for(let h=0; h<this.state.sizeRatio; h++){
             grid_lines.push(
                 <GridLine
                     key={100+h}
-                    points={[-(this.state.wheel.width * this.state.sizeRatio / 2), -h*this.state.wheel.height, (this.state.wheel.width * this.state.sizeRatio / 2), -h*this.state.wheel.height]}
+                    points={[0, -h*this.state.wheel.height, (this.state.wheel.width * this.state.sizeRatio), -h*this.state.wheel.height]}
                     x={0} y={0}
                     stroke="#c0c0c0"
                     strokeWidth={1}
                 />)
         }
-        for(let w=-11; w<this.state.sizeRatio / 2; w++){
+        for(let w=0; w<this.state.sizeRatio; w++){
             grid_lines.push(
                 <GridLine
                     key={200+w}
-                    points={[w*this.state.wheel.width, this.state.wheel.height * this.state.sizeRatio / 2, w*this.state.wheel.width, -this.state.wheel.height * this.state.sizeRatio / 2]}
+                    points={[w*this.state.wheel.width, 0, w*this.state.wheel.width, -this.state.wheel.height * this.state.sizeRatio]}
                     x={0} y={0}
                     stroke="#c0c0c0"
                     strokeWidth={1}
@@ -385,7 +413,7 @@ export default class App extends Component {
 
     drawAxle(){
         let axles = [];
-
+        // debugger;
         for(let i=0; i<this.state.wheelPos.length-1; i++){
             for(let j=i+1; j<this.state.wheelPos.length; j++){
                 if(this.state.wheelPos[i].y == this.state.wheelPos[j].y){
@@ -394,10 +422,10 @@ export default class App extends Component {
                             key={300+i*16+j}
                             points={
                                 [
-                                    this.state.wheelPos[i].x+this.state.wheel.width/2,
-                                    this.state.wheelPos[i].y+this.state.wheel.height/2,
-                                    this.state.wheelPos[j].x+this.state.wheel.width/2,
-                                    this.state.wheelPos[j].y+this.state.wheel.height/2
+                                    parseFloat(this.state.wheelPos[i].x)+parseFloat(this.state.wheel.width/2),
+                                    parseFloat(this.state.wheelPos[i].y)+parseFloat(this.state.wheel.height/2),
+                                    parseFloat(this.state.wheelPos[j].x)+parseFloat(this.state.wheel.width/2),
+                                    parseFloat(this.state.wheelPos[j].y)+parseFloat(this.state.wheel.height/2)
                                 ]
                             }
                             x={0} y={0}
@@ -408,16 +436,19 @@ export default class App extends Component {
                             onDragEnd={(event) => this.axleUpHandle(event, i, j)}
                         />
                     );
+                    console.log(this.state.wheelPos);
                 }
             }
         }
         this.setState({axles: axles});
+        console.log(axles);
         return(axles);
     }
 
     // axles functions
     axleDownHandle(event, i, j){
-        // console.log('Axle Down');
+        console.log('Axle Down');
+        console.log(event);
         let tempPos = {
             x: event.evt.offsetX,
             y: event.evt.offsetY
@@ -427,8 +458,8 @@ export default class App extends Component {
         });
     }
     axleMoveHandle(event, i, j){
-        // console.log('axle move');
-        // console.log(event.evt.offsetX);
+        console.log('axle move');
+        console.log(event.evt.offsetX);
         let wheelPos = this.state.wheelPos;
         wheelPos[i].x = wheelPos[i].x + (event.evt.offsetX - this.state.axlesDown.x);
         wheelPos[i].y = wheelPos[i].y + (event.evt.offsetY - this.state.axlesDown.y);
@@ -438,14 +469,14 @@ export default class App extends Component {
         this.setState({
             wheelPos: wheelPos
         });
-        if(event.target._lastPos.x < 0 || event.target._lastPos.x >= (this.state.board.width - 2* this.state.wheel.width)){
-            let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
-            this.setWheelPos(index, tempPos);
-        }
-        if(event.target._lastPos.y < 0 || event.target._lastPos.y >= (this.state.board.height - this.state.wheel.height)){
-            let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
-            this.setWheelPos(index, tempPos);
-        }
+        // if(event.target._lastPos.x < 0 || event.target._lastPos.x >= (this.state.board.width - 2* this.state.wheel.width)){
+        //     // let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
+        //     this.setWheelPos(index, tempPos);
+        // }
+        // if(event.target._lastPos.y < 0 || event.target._lastPos.y >= (this.state.board.height - this.state.wheel.height)){
+        //     // let tempPos = this.fitWheelGrid(this.state.wheelPos[index].x, this.state.wheelPos[index].y, index);
+        //     this.setWheelPos(index, tempPos);
+        // }
         let tempPos = {
             x: event.evt.offsetX,
             y: event.evt.offsetY
@@ -456,8 +487,8 @@ export default class App extends Component {
 
     }
     axleUpHandle(event, i, j){
-        // console.log('Axle Up');
-        // console.log(event);
+        console.log('Axle Up');
+        console.log(event);
         // console.log('(i, j) = (%s, %s)', i, j);
         // let wheelPos = this.state.wheelPos;
         // wheelPos[i].x = event.target.attrs.points[0] - this.state.wheel.width/2;
@@ -468,7 +499,7 @@ export default class App extends Component {
         // this.setState({
         //     wheelPos: wheelPos
         // });
-        this.fitAllWheelsGrid();
+        // this.fitAllWheelsGrid();
         this.drawAxle();
     }
 
@@ -508,24 +539,28 @@ export default class App extends Component {
     }
 
     renderStandardAxis(realCoordinate, axis){
+        console.log(realCoordinate);
+        // return realCoordinate;
         let unit;
         if(axis == 'x') {
-            unit = Math.floor(realCoordinate / this.state.wheel.width);
+            unit = realCoordinate / this.state.wheel.width;
         } else{
-            unit = Math.floor(realCoordinate / this.state.wheel.height);
+            unit = realCoordinate / this.state.wheel.height;
         }
         console.log(unit);
-        return unit * this.state.unitLength;
+        return Math.round(unit * this.state.unitLength * 10) / 10;
     }
 
     revertStandardAxis(unitCoordinate, axis){
+        // console.log(unitCoordinate);
+        // return unitCoordinate;
         let real;
         if(axis == 'x') {
             real = unitCoordinate / this.state.unitLength;
             real = real * this.state.wheel.width;
         } else{
-            real = Math.floor(unitCoordinate / this.state.unitLength);
-            real = (real) * this.state.wheel.height;
+            real = unitCoordinate / this.state.unitLength;
+            real = real * this.state.wheel.height;
         }
         console.log(real);
         return real;
@@ -601,7 +636,7 @@ export default class App extends Component {
                                             type="text"
                                             placeholder="0.00"
                                             className="text-width"
-                                            value={wheelPos?this.renderStandardAxis(-wheelPos.y-this.state.wheel.height, 'y'):"0.00"}
+                                            value={wheelPos?this.renderStandardAxis(-wheelPos.y, 'y'):"0.00"}
                                             onChange={(event) => this.yPosChange(event, i)}
                                         />
                                     </div>
@@ -615,8 +650,8 @@ export default class App extends Component {
                             ref="stage"
                             width={this.state.board.width}
                             height={this.state.board.height}
-                            y={this.state.wheel.height * this.state.sizeRatio / 2}
-                            x={this.state.wheel.width * this.state.sizeRatio / 2}
+                            y={this.state.wheel.height * this.state.sizeRatio}
+                            // x={}
                             className="mt-100 stage-border mb-30"
                         >
                             <Layer ref="background">
@@ -648,7 +683,7 @@ export default class App extends Component {
                                 {
                                     this.state.wheelPos.map((wheelPos, i) => {
                                         return(
-                                            <Label key={(i+1) * 1000} x={wheelPos.x+this.state.wheel.width/2} y={wheelPos.y - 10} opacity="0.75">
+                                            <Label key={(i+1) * 1000} x={parseFloat(wheelPos.x)+parseFloat(this.state.wheel.width/2)} y={wheelPos.y - 10} opacity="0.75">
                                                 <Tag
                                                     key={(i+1) * 2000}
                                                     fill="green"
@@ -663,7 +698,7 @@ export default class App extends Component {
                                                 />
                                                 <Text
                                                     key={(i+1) * 3000}
-                                                    text={"(" + this.renderStandardAxis(wheelPos.x, 'x') + ", " + this.renderStandardAxis(-wheelPos.y-this.state.wheel.height, 'y') + ")"}
+                                                    text={"(" + this.renderStandardAxis(wheelPos.x, 'x') + ", " + this.renderStandardAxis(-wheelPos.y, 'y') + ")"}
                                                     fontSize={15}
                                                     padding={5}
                                                     fill="white"
